@@ -18,7 +18,8 @@ type DynamoDBStore struct {
 }
 
 type Storage interface {
-	InsertData(Anime) error
+	InsertAnime(Anime) error
+	GetAnime(string) (Anime, error)
 }
 
 func InitStore() (*DynamoDBStore, error) {
@@ -77,7 +78,7 @@ func (store *DynamoDBStore) CreateTable() (*types.TableDescription, error) {
 	return tableOutput.TableDescription, nil
 }
 
-func (store DynamoDBStore) InsertData(anime Anime) error {
+func (store DynamoDBStore) InsertAnime(anime Anime) error {
 	item, err := attributevalue.MarshalMap(anime)
 
 	if err != nil {
@@ -89,4 +90,28 @@ func (store DynamoDBStore) InsertData(anime Anime) error {
 		Item:      item,
 	})
 	return err
+}
+
+func (store DynamoDBStore) GetAnime(id string) (Anime, error) {
+	anime := new(Anime)
+	temp, err := attributevalue.Marshal(id)
+	if err != nil {
+		return *anime, err
+	}
+	newId := map[string]types.AttributeValue{"id": temp}
+	response, err := store.Client.GetItem(context.Background(), &dynamodb.GetItemInput{
+		Key: newId, TableName: aws.String(store.TableName),
+	})
+
+	if err != nil {
+		return *anime, err
+	}
+
+	err = attributevalue.UnmarshalMap(response.Item, &anime)
+
+	if err != nil {
+		return *anime, err
+	}
+
+	return *anime, nil
 }

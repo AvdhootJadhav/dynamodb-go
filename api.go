@@ -24,6 +24,7 @@ func (server APIServer) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/greet", makeHTTPHandlerFunc(greet))
 	router.HandleFunc("/anime", makeHTTPHandlerFunc(server.createAnime))
+	router.HandleFunc("/anime/{id}", makeHTTPHandlerFunc(server.getAnime))
 
 	http.ListenAndServe(server.ListenAddr, router)
 }
@@ -49,13 +50,40 @@ func (server APIServer) createAnime(w http.ResponseWriter, r *http.Request) erro
 		Status: request.Status,
 	}
 
-	err = server.Store.InsertData(anime)
+	err = server.Store.InsertAnime(anime)
 
 	if err != nil {
 		return writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
 	return writeJSON(w, http.StatusOK, request)
+}
+
+func (server APIServer) getAnime(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		id := mux.Vars(r)["id"]
+
+		anime, err := server.Store.GetAnime(id)
+
+		if err != nil {
+			return writeJSON(w, http.StatusBadRequest, APIError{Error: "id must be an uuid or id does not exist in DB"})
+		}
+
+		if anime.Id == "" {
+			return writeJSON(w, http.StatusBadRequest, APIError{Error: "id is invalid"})
+		}
+
+		response := GetAnimeResponse{
+			Id:     anime.Id,
+			Title:  anime.Title,
+			Author: anime.Author,
+			Year:   anime.Year,
+			Status: anime.Status,
+		}
+
+		return writeJSON(w, http.StatusOK, response)
+	}
+	return writeJSON(w, http.StatusBadRequest, APIError{Error: "method not allowed"})
 }
 
 type APIError struct {

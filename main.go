@@ -17,12 +17,13 @@ func main() {
 	res, err := store.CreateTable()
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
+	} else {
+		if res.TableStatus == types.TableStatusActive {
+			log.Println("Table created!!")
+		}
 	}
 
-	if res.TableStatus == types.TableStatusActive {
-		log.Println("Table created!!")
-	}
 	server := NewServer(":8080", store)
 	server.Run()
 }

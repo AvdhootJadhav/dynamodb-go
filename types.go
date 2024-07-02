@@ -14,3 +14,11 @@ type CreateAnimeRequest struct {
 	Year   int    `json:"year"`
 	Status string `json:"status"`
 }
+
+type GetAnimeResponse struct {
+	Id     string `json:"id"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
+	Year   int    `json:"year"`
+	Status string `json:"status"`
+}
