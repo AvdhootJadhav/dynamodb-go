@@ -73,15 +73,7 @@ func (server APIServer) getAnime(w http.ResponseWriter, r *http.Request) error {
 			return writeJSON(w, http.StatusBadRequest, APIError{Error: "id is invalid"})
 		}
 
-		response := GetAnimeResponse{
-			Id:     anime.Id,
-			Title:  anime.Title,
-			Author: anime.Author,
-			Year:   anime.Year,
-			Status: anime.Status,
-		}
-
-		return writeJSON(w, http.StatusOK, response)
+		return writeJSON(w, http.StatusOK, anime)
 	}
 	return writeJSON(w, http.StatusBadRequest, APIError{Error: "method not allowed"})
 }
