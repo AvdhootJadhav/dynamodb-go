@@ -14,13 +14,20 @@ func main() {
 	}
 
 	log.Println("Connected to DB!!")
-	res, err := store.CreateTable()
 
-	if err != nil {
-		log.Println(err)
+	checkRes := store.CheckTableExists("anime")
+
+	if checkRes {
+		log.Println("Table already exists!!")
 	} else {
-		if res.TableStatus == types.TableStatusActive {
-			log.Println("Table created!!")
+		res, err := store.CreateTable()
+
+		if err != nil {
+			log.Println(err)
+		} else {
+			if res.TableStatus == types.TableStatusActive {
+				log.Println("Table created!!")
+			}
 		}
 	}
 

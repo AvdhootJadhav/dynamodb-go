@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"slices"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -40,6 +41,20 @@ func InitStore() (*DynamoDBStore, error) {
 		TableName: "anime",
 	}
 	return &store, nil
+}
+
+func (store DynamoDBStore) CheckTableExists(table string) bool {
+	var tables []string
+	tablePaginator := dynamodb.NewListTablesPaginator(store.Client, &dynamodb.ListTablesInput{})
+	for tablePaginator.HasMorePages() {
+		output, err := tablePaginator.NextPage(context.TODO())
+		if err != nil {
+			return false
+		} else {
+			tables = append(tables, output.TableNames...)
+		}
+	}
+	return slices.Contains(tables, table)
 }
 
 func (store *DynamoDBStore) CreateTable() (*types.TableDescription, error) {
