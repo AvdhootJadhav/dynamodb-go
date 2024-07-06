@@ -34,29 +34,48 @@ func greet(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (server APIServer) createAnime(w http.ResponseWriter, r *http.Request) error {
-	var request CreateAnimeRequest
-	err := json.NewDecoder(r.Body).Decode(&request)
-	defer r.Body.Close()
+	if r.Method == "POST" {
+		var request CreateAnimeRequest
+		err := json.NewDecoder(r.Body).Decode(&request)
+		defer r.Body.Close()
 
-	if err != nil {
-		return writeJSON(w, http.StatusInternalServerError, err)
+		if err != nil {
+			return writeJSON(w, http.StatusInternalServerError, err)
+		}
+
+		anime := Anime{
+			Id:     uuid.New().String(),
+			Title:  request.Title,
+			Author: request.Author,
+			Year:   request.Year,
+			Status: request.Status,
+		}
+
+		err = server.Store.InsertAnime(anime)
+
+		if err != nil {
+			return writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+
+		return writeJSON(w, http.StatusOK, anime)
 	}
+	if r.Method == "PATCH" {
+		var anime Anime
+		err := json.NewDecoder(r.Body).Decode(&anime)
+		defer r.Body.Close()
 
-	anime := Anime{
-		Id:     uuid.New().String(),
-		Title:  request.Title,
-		Author: request.Author,
-		Year:   request.Year,
-		Status: request.Status,
+		if err != nil {
+			return writeJSON(w, http.StatusInternalServerError, APIError{Error: err.Error()})
+		}
+
+		err = server.Store.UpdateAnime(anime)
+
+		if err != nil {
+			return writeJSON(w, http.StatusInternalServerError, APIError{Error: err.Error()})
+		}
+		return writeJSON(w, http.StatusOK, map[string]bool{"status": true})
 	}
-
-	err = server.Store.InsertAnime(anime)
-
-	if err != nil {
-		return writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-
-	return writeJSON(w, http.StatusOK, request)
+	return writeJSON(w, http.StatusBadRequest, APIError{Error: "method not supported"})
 }
 
 func (server APIServer) getAnime(w http.ResponseWriter, r *http.Request) error {

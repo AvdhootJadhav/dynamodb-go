@@ -17,9 +17,7 @@ func main() {
 
 	checkRes := store.CheckTableExists("anime")
 
-	if checkRes {
-		log.Println("Table already exists!!")
-	} else {
+	if !checkRes {
 		res, err := store.CreateTable()
 
 		if err != nil {

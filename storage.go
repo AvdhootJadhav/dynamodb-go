@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
@@ -22,6 +23,7 @@ type Storage interface {
 	InsertAnime(Anime) error
 	GetAnime(string) (Anime, error)
 	DeleteAnime(string) error
+	UpdateAnime(Anime) error
 }
 
 func InitStore() (*DynamoDBStore, error) {
@@ -145,5 +147,42 @@ func (store DynamoDBStore) DeleteAnime(id string) error {
 		TableName: &store.TableName,
 		Key:       newId,
 	})
+	return err
+}
+
+func (store DynamoDBStore) UpdateAnime(anime Anime) error {
+	update := expression.Set(expression.Name("status"), expression.Value(anime.Status))
+	update.Set(expression.Name("year"), expression.Value(anime.Year))
+	update.Set(expression.Name("author"), expression.Value(anime.Author))
+	update.Set(expression.Name("title"), expression.Value(anime.Title))
+
+	expr, err := expression.NewBuilder().WithUpdate(update).Build()
+
+	if err != nil {
+		return err
+	}
+
+	temp, err := attributevalue.Marshal(anime.Id)
+
+	if err != nil {
+		return err
+	}
+
+	newId := map[string]types.AttributeValue{"id": temp}
+
+	response, err := store.Client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		TableName:                 &store.TableName,
+		Key:                       newId,
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		UpdateExpression:          expr.Update(),
+		ReturnValues:              types.ReturnValueUpdatedNew,
+	})
+
+	if err != nil {
+		return err
+	}
+	var attributeMap map[string]interface{}
+	err = attributevalue.UnmarshalMap(response.Attributes, &attributeMap)
 	return err
 }
