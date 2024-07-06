@@ -21,6 +21,7 @@ type DynamoDBStore struct {
 type Storage interface {
 	InsertAnime(Anime) error
 	GetAnime(string) (Anime, error)
+	DeleteAnime(string) error
 }
 
 func InitStore() (*DynamoDBStore, error) {
@@ -129,4 +130,20 @@ func (store DynamoDBStore) GetAnime(id string) (Anime, error) {
 	}
 
 	return *anime, nil
+}
+
+func (store DynamoDBStore) DeleteAnime(id string) error {
+	temp, err := attributevalue.Marshal(id)
+
+	if err != nil {
+		return err
+	}
+
+	newId := map[string]types.AttributeValue{"id": temp}
+
+	_, err = store.Client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+		TableName: &store.TableName,
+		Key:       newId,
+	})
+	return err
 }

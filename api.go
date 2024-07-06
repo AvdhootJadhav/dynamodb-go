@@ -75,6 +75,16 @@ func (server APIServer) getAnime(w http.ResponseWriter, r *http.Request) error {
 
 		return writeJSON(w, http.StatusOK, anime)
 	}
+	if r.Method == "DELETE" {
+		id := mux.Vars(r)["id"]
+
+		err := server.Store.DeleteAnime(id)
+
+		if err != nil {
+			return writeJSON(w, http.StatusBadRequest, APIError{Error: err.Error()})
+		}
+		return writeJSON(w, http.StatusOK, map[string]bool{"status": true})
+	}
 	return writeJSON(w, http.StatusBadRequest, APIError{Error: "method not allowed"})
 }
 
